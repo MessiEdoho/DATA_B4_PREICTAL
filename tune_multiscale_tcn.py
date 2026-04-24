@@ -188,7 +188,7 @@ if DRY_RUN:
     N_TRIALS = 2
     N_STARTUP = 1
 
-OUTPUT_DIR        = Path("/home/people/22206468/scratch/OUTPUT/MODEL3_OUTPUT/MultiScaleTCNtuning_outputs")
+OUTPUT_DIR        = Path("/home/people/22206468/scratch/OUTPUT_T_120/M3/tuning_outputs")
 LOG_DIR           = OUTPUT_DIR / "logs"
 FIGURE_DIR        = OUTPUT_DIR / "figures"
 # Manifest path -- switch by uncommenting the desired line.

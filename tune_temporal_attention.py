@@ -148,10 +148,10 @@ if DRY_RUN:
     N_TRIALS = 2
     N_STARTUP = 1
 
-OUTPUT_DIR      = Path("/home/people/22206468/scratch/OUTPUT/MODEL2_OUTPUT")                      # all pipeline outputs
+OUTPUT_DIR      = Path("/home/people/22206468/scratch/OUTPUT_T_120/M2/tuning_outputs")            # all pipeline outputs
 LOG_DIR         = OUTPUT_DIR / "logs"                   # log file directory
 FIGURE_DIR      = OUTPUT_DIR / "figures"                # figure output directory
-BEST_TCN_PATH   = Path("/home/people/22206468/scratch/OUTPUT/MODEL1_OUTPUT/TCNtuning_outputs/best_params.json")  # fixed TCN backbone hyperparameters
+BEST_TCN_PATH   = Path("/home/people/22206468/scratch/OUTPUT_T_120/M1/tuning_outputs/best_params.json")  # fixed TCN backbone hyperparameters
 # Manifest path -- switch by uncommenting the desired line.
 # Option A (uniform downsampling, historical): data_splits.json
 # SPLITS_PATH     = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits.json")

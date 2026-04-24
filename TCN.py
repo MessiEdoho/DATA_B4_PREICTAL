@@ -27,10 +27,10 @@ python TCN.py
 
 Key outputs
 -----------
-outputs/TCN/tcn_final_weights.pt
-outputs/TCN/tcn_evaluation_report.json
-outputs/TCN/tcn_three_row_summary.csv
-outputs/TCN/figures/  (12 figures)
+/home/people/22206468/scratch/OUTPUT_T_120/M1/tcn_final_weights.pt
+/home/people/22206468/scratch/OUTPUT_T_120/M1/tcn_evaluation_report.json
+/home/people/22206468/scratch/OUTPUT_T_120/M1/tcn_three_row_summary.csv
+/home/people/22206468/scratch/OUTPUT_T_120/M1/figures/  (12 figures)
 """
 
 # ---------------------------------------------------------------------------
@@ -112,7 +112,7 @@ REFRACTORY_SEC    = 30.0                               # merge events separated 
 SMOOTHING_WIN     = 3                                  # number of segments in the probability smoothing kernel
 MODEL_NAME        = "TCN"                              # model identifier for output filenames and JSON records
 
-OUTPUT_ROOT       = Path("outputs") / "TCN"            # all M1 outputs under this directory
+OUTPUT_ROOT       = Path("/home/people/22206468/scratch/OUTPUT_T_120/M1")  # all M1 outputs under this directory
 CKPT_DIR          = OUTPUT_ROOT / "checkpoints"        # periodic and best-model checkpoints
 LOG_DIR           = OUTPUT_ROOT / "logs"               # training log (DEBUG-level detail)
 FIGURE_DIR        = OUTPUT_ROOT / "figures"            # all 12 evaluation figures
@@ -130,7 +130,7 @@ THREE_ROW_CSV     = OUTPUT_ROOT / "tcn_three_row_summary.csv"  # paper Table 1 (
 # SPLITS_PATH         = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_nonictal_sampled.json")
 # Option C (pre-ictal [T-120, T-60], seizure-prediction; create_T_120_splits.py):
 SPLITS_PATH         = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_T_120_sampled.json")
-BEST_PARAMS_PATH    = Path("/home/people/22206468/scratch/OUTPUT/MODEL1_OUTPUT/TCNtuning_outputs") / "best_params.json"
+BEST_PARAMS_PATH    = Path("/home/people/22206468/scratch/OUTPUT_T_120/M1/tuning_outputs") / "best_params.json"
 
 
 # ---------------------------------------------------------------------------

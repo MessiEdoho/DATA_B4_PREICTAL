@@ -120,7 +120,7 @@ REFRACTORY_SEC    = 30.0
 SMOOTHING_WIN     = 3
 MODEL_NAME        = "MultiScaleTCNWithAttention"
 
-OUTPUT_ROOT       = Path("/home/people/22206468/scratch/OUTPUT/MODEL4_OUTPUT") / "MultiScaleTCNAttention"
+OUTPUT_ROOT       = Path("/home/people/22206468/scratch/OUTPUT_T_120/M4")
 CKPT_DIR          = OUTPUT_ROOT / "checkpoints"
 LOG_DIR           = OUTPUT_ROOT / "logs"
 FIGURE_DIR        = OUTPUT_ROOT / "figures"
@@ -132,8 +132,8 @@ EPOCH_CSV         = OUTPUT_ROOT / "ms_attn_epoch_metrics.csv"
 THREE_ROW_CSV     = OUTPUT_ROOT / "ms_attn_three_row_summary.csv"
 
 # Two JSON input files -- backbone and attention tuning results
-BACKBONE_PARAMS_PATH = Path("/home/people/22206468/scratch/OUTPUT/MODEL3_OUTPUT/MultiScaleTCNtuning_outputs") / "best_multiscale_params.json"
-ATTN_PARAMS_PATH     = Path("/home/people/22206468/scratch/OUTPUT/MODEL4_OUTPUT") / "best_multiscale_attn_params.json"
+BACKBONE_PARAMS_PATH = Path("/home/people/22206468/scratch/OUTPUT_T_120/M3/tuning_outputs") / "best_multiscale_params.json"
+ATTN_PARAMS_PATH     = Path("/home/people/22206468/scratch/OUTPUT_T_120/M4/tuning_outputs") / "best_multiscale_attn_params.json"
 
 # Manifest path -- single source of truth (matches all other pipeline scripts).
 # Switch by uncommenting the desired line; only one SPLITS_PATH should be active.

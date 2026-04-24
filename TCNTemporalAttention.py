@@ -50,10 +50,10 @@ python TCNTemporalAttention.py
 
 Key outputs
 -----------
-outputs/TCNAttention/tcn_attention_final_weights.pt
-outputs/TCNAttention/tcn_attention_evaluation_report.json
-outputs/TCNAttention/tcn_attention_three_row_summary.csv
-outputs/TCNAttention/figures/  (13 figures)
+/home/people/22206468/scratch/OUTPUT_T_120/M2/tcn_attention_final_weights.pt
+/home/people/22206468/scratch/OUTPUT_T_120/M2/tcn_attention_evaluation_report.json
+/home/people/22206468/scratch/OUTPUT_T_120/M2/tcn_attention_three_row_summary.csv
+/home/people/22206468/scratch/OUTPUT_T_120/M2/figures/  (13 figures)
 """
 
 # ---------------------------------------------------------------------------
@@ -126,7 +126,7 @@ REFRACTORY_SEC    = 30.0                               # merge events separated 
 SMOOTHING_WIN     = 3                                  # segments in probability smoothing kernel
 MODEL_NAME        = "TCNWithTemporalAttention"         # model identifier for filenames and JSON
 
-OUTPUT_ROOT       = Path("/home/people/22206468/scratch/OUTPUT/MODEL2_OUTPUT") / "TCNAttention"             # all M2 outputs here
+OUTPUT_ROOT       = Path("/home/people/22206468/scratch/OUTPUT_T_120/M2")  # all M2 outputs here
 CKPT_DIR          = OUTPUT_ROOT / "checkpoints"                  # periodic and best checkpoints
 LOG_DIR           = OUTPUT_ROOT / "logs"                         # training log
 FIGURE_DIR        = OUTPUT_ROOT / "figures"                      # all 13 figures
@@ -138,8 +138,8 @@ EPOCH_CSV         = OUTPUT_ROOT / "tcn_attention_epoch_metrics.csv"
 THREE_ROW_CSV     = OUTPUT_ROOT / "tcn_attention_three_row_summary.csv"
 
 # Two JSON input files -- backbone and attention tuning results
-BACKBONE_PARAMS_PATH = Path("/home/people/22206468/scratch/OUTPUT/MODEL1_OUTPUT/TCNtuning_outputs") / "best_params.json"            # from tcn_HPT_binary.ipynb
-ATTN_PARAMS_PATH     = Path("/home/people/22206468/scratch/OUTPUT/MODEL2_OUTPUT") / "best_attention_params.json"  # from tune_temporal_attention.py
+BACKBONE_PARAMS_PATH = Path("/home/people/22206468/scratch/OUTPUT_T_120/M1/tuning_outputs") / "best_params.json"            # from tcn_HPT_binary.py
+ATTN_PARAMS_PATH     = Path("/home/people/22206468/scratch/OUTPUT_T_120/M2/tuning_outputs") / "best_attention_params.json"  # from tune_temporal_attention.py
 
 # Manifest path -- single source of truth (matches all other pipeline scripts).
 # Switch by uncommenting the desired line; only one SPLITS_PATH should be active.
@@ -166,7 +166,7 @@ def setup_logging():
     -------
     logger : logging.Logger
     """
-    OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)   # create outputs/TCNAttention/ if absent
+    OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)   # create OUTPUT_T_120/M2/ if absent
     CKPT_DIR.mkdir(parents=True, exist_ok=True)     # create checkpoints/ subdirectory
     LOG_DIR.mkdir(parents=True, exist_ok=True)      # create logs/ subdirectory
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)   # create figures/ subdirectory
@@ -1042,7 +1042,7 @@ def plot_attention_saliency(model, val_loader, y_true, device, logger):
     TCNWithAttention.get_attention_weights(). Plots mean saliency profiles
     averaged over ictal and non-ictal segments separately.
 
-    File saved: outputs/TCNAttention/figures/tcn_attention_saliency_maps.png
+    File saved: /home/people/22206468/scratch/OUTPUT_T_120/M2/figures/tcn_attention_saliency_maps.png
     """
     # -- Collect attention weights alpha_t for every validation segment ----------
     # get_attention_weights() runs a forward pass through the TCN backbone
@@ -1425,8 +1425,8 @@ def main():
         logger.info("  [%s] %s", status, p)
 
     logger.info("=" * 65)
-    logger.info("ABLATION NOTE: Compare outputs/TCN/tcn_three_row_summary.csv (M1) "
-                "with outputs/TCNAttention/tcn_attention_three_row_summary.csv (M2) "
+    logger.info("ABLATION NOTE: Compare OUTPUT_T_120/M1/tcn_three_row_summary.csv (M1) "
+                "with OUTPUT_T_120/M2/tcn_attention_three_row_summary.csv (M2) "
                 "to isolate the contribution of temporal attention.")
     logger.info("NEXT: run final_evaluation.py when test data is ready.")
 
@@ -1494,8 +1494,8 @@ if __name__ == "__main__":
 # M1 (TCN) vs M2 (TCN + Temporal Attention):
 #   Both share identical backbone (num_layers, kernel_size, num_filters,
 #   dropout). The only difference is the attention pooling mechanism.
-#   Compare: outputs/TCN/tcn_three_row_summary.csv (M1)
-#       vs:  outputs/TCNAttention/tcn_attention_three_row_summary.csv (M2)
+#   Compare: OUTPUT_T_120/M1/tcn_three_row_summary.csv (M1)
+#       vs:  OUTPUT_T_120/M2/tcn_attention_three_row_summary.csv (M2)
 #
 # -- INTERPRETABILITY (Results) --------------------------------------------
 # "Temporal attention weights were extracted for all validation segments

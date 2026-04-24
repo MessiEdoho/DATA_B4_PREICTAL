@@ -133,7 +133,7 @@ FS                = 500                                # EEG sampling rate (Hz)
 SEGMENT_LEN       = 2500                               # samples per segment (5 s at 500 Hz)
 SEGMENT_SEC       = 5.0                                # segment duration in seconds
 
-OUTPUT_DIR        = Path("/home/people/22206468/scratch/OUTPUT/MODEL4_OUTPUT")
+OUTPUT_DIR        = Path("/home/people/22206468/scratch/OUTPUT_T_120/M4/tuning_outputs")
 LOG_DIR           = OUTPUT_DIR / "logs"
 FIGURE_DIR        = OUTPUT_DIR / "figures"
 # Manifest path -- switch by uncommenting the desired line.
@@ -143,7 +143,7 @@ FIGURE_DIR        = OUTPUT_DIR / "figures"
 # SPLITS_PATH       = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_nonictal_sampled.json")
 # Option C (pre-ictal [T-120, T-60], seizure-prediction; create_T_120_splits.py):
 SPLITS_PATH       = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_T_120_sampled.json")
-BEST_MS_PATH      = OUTPUT_DIR / "best_multiscale_params.json"
+BEST_MS_PATH      = Path("/home/people/22206468/scratch/OUTPUT_T_120/M3/tuning_outputs/best_multiscale_params.json")  # produced by tune_multiscale_tcn.py (M3)
 BEST_ATTN_PATH    = OUTPUT_DIR / "best_multiscale_attn_params.json"
 STUDY_CSV         = OUTPUT_DIR / "multiscale_attn_study_results.csv"
 SUMMARY_PATH      = OUTPUT_DIR / "multiscale_attn_tuning_summary.json"

@@ -106,7 +106,7 @@ if DRY_RUN:
     N_STARTUP = 1
 
 # -- Output --------------------------------------------------------------------
-OUTPUT_DIR    = Path("/home/people/22206468/scratch/OUTPUT/MODEL1_OUTPUT/TCNtuning_outputs")       # directory for all saved outputs
+OUTPUT_DIR    = Path("/home/people/22206468/scratch/OUTPUT_T_120/M1/tuning_outputs")       # directory for all saved outputs
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)  # create full path if absent
 
 # -- Logging setup -------------------------------------------------------------

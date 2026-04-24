@@ -222,7 +222,7 @@ AMPLITUDE_THRESHOLD = 1000.0      # max|x| filter (failed z-score normalisation)
 # Input: original data_splits.json produced by generate_data_splits.py
 SPLITS_PATH = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits.json")
 # Output: pre-ictal manifest consumed by all tuning and training scripts
-OUTPUT_PATH = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_T_120_sampled.json")
+OUTPUT_PATH = Path("/home/people/22206468/scratch/INPUT_T_120/data_splits_outputs/data_splits_T_120_sampled.json")
 # Seizure annotation Excel files (one per mouse: {mouse_id}_xlsx.xlsx)
 ANNOTATION_DIR = Path("/home/people/22206468/scratch/seizure_times_updated")
 

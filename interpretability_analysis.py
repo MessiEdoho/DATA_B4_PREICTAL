@@ -115,18 +115,18 @@ INTERP_BASE    = Path("outputs") / "interpretability"  # partition suffix append
 
 # Model weights -- produced by the four training scripts.
 # Exact filenames match the training script output paths.
-M1_WEIGHTS = Path("outputs/TCN/tcn_final_weights.pt")                                         # M1: TCN baseline
-M2_WEIGHTS = Path("outputs/TCNAttention/tcn_attention_final_weights.pt")                       # M2: TCN + attention
-M3_WEIGHTS = Path("outputs/MultiScaleTCN/multiscale_tcn_final_weights.pt")                     # M3: multi-scale TCN
-M4_WEIGHTS = Path("outputs/MultiScaleTCNAttention/multiscale_tcn_attention_final_weights.pt")   # M4: multi-scale + attention
+M1_WEIGHTS = Path("/home/people/22206468/scratch/OUTPUT_T_120/M1/tcn_final_weights.pt")           # M1: TCN baseline
+M2_WEIGHTS = Path("/home/people/22206468/scratch/OUTPUT_T_120/M2/tcn_attention_final_weights.pt")  # M2: TCN + attention
+M3_WEIGHTS = Path("/home/people/22206468/scratch/OUTPUT_T_120/M3/multiscale_tcn_final_weights.pt") # M3: multi-scale TCN
+M4_WEIGHTS = Path("/home/people/22206468/scratch/OUTPUT_T_120/M4/ms_attn_final_weights.pt")        # M4: multi-scale + attention
 
 # Config JSON paths -- produced by tuning scripts and notebooks
 SPLITS_PATH_PRIMARY = Path("data_splits_outputs") / "data_splits.json"  # primary location from generate_data_splits.py
 SPLITS_PATH_ALT     = Path("outputs") / "data_splits.json"             # fallback if user moved file
-BEST_TCN_PATH       = Path("outputs") / "best_params.json"             # TCN backbone HPs from tcn_HPT_binary.ipynb
-BEST_MS_PATH        = Path("outputs") / "best_multiscale_params.json"  # MultiScaleTCN HPs from tune_multiscale_tcn.py
-BEST_ATTN_PATH      = Path("outputs") / "best_attention_params.json"   # attention HPs from tune_temporal_attention.py
-BEST_MS_ATTN_PATH   = Path("outputs") / "best_multiscale_attn_params.json"  # MS attention HPs from tune_multiscale_attention.py
+BEST_TCN_PATH       = Path("/home/people/22206468/scratch/OUTPUT_T_120/M1/tuning_outputs/best_params.json")             # TCN backbone HPs from tcn_HPT_binary.py
+BEST_MS_PATH        = Path("/home/people/22206468/scratch/OUTPUT_T_120/M3/tuning_outputs/best_multiscale_params.json")  # MultiScaleTCN HPs from tune_multiscale_tcn.py
+BEST_ATTN_PATH      = Path("/home/people/22206468/scratch/OUTPUT_T_120/M2/tuning_outputs/best_attention_params.json")   # attention HPs from tune_temporal_attention.py
+BEST_MS_ATTN_PATH   = Path("/home/people/22206468/scratch/OUTPUT_T_120/M4/tuning_outputs/best_multiscale_attn_params.json")  # MS attention HPs from tune_multiscale_attention.py
 
 # Fallback dilation schedules if branch_dilations not found in JSON
 # (must match tune_multiscale_tcn.py)
