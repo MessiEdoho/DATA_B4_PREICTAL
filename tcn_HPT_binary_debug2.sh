@@ -18,7 +18,7 @@ module purge
 module load anaconda3
 conda activate torch_v100_py310
 
-cd ~/TCN_SSL_GA
+cd ~/DATA_B4_PREICTAL
 
 python tcn_HPT_binary_debug2.py
 

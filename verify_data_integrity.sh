@@ -31,7 +31,7 @@ module purge
 module load anaconda3
 conda activate torch_v100_py310
 
-cd ~/TCN_SSL_GA
+cd ~/DATA_B4_PREICTAL
 
 # Run the integrity check
 python verify_data_integrity.py

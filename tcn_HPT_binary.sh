@@ -28,7 +28,7 @@ module purge
 module load anaconda3
 conda activate torch_v100_py310
 
-cd ~/TCN_SSL_GA
+cd ~/DATA_B4_PREICTAL
 
 # Run the converted Python script (tcn_HPT_binary.ipynb -> tcn_HPT_binary.py)
 python tcn_HPT_binary.py

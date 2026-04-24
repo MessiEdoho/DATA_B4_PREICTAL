@@ -29,7 +29,7 @@ module purge
 module load anaconda3
 conda activate torch_v100_py310
 
-cd ~/TCN_SSL_GA
+cd ~/DATA_B4_PREICTAL
 
 # Enable dry-run mode: script reads this env var and caps N_TRIALS at 2.
 # Purpose: verify script starts, loads data, reaches training loop, and

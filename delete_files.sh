@@ -24,7 +24,7 @@ module purge
 module load anaconda3
 conda activate uniqureSSLGA
 
-cd ~/TCN_SSL_GA
+cd ~/DATA_B4_PREICTAL
 
 # Run the Python script
 
