@@ -48,7 +48,7 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)  # suppress Optuna's verbos
 from tcn_utils import (
     set_seed,
     make_loader,
-    # filter_unpaired_subjects,  # handled offline by create_balanced_splits.py
+    # filter_unpaired_subjects,  # handled offline by create_T_120_splits.py (or create_balanced_splits.py for peri-ictal)
     downsample_val_stratified,
     TCN,
     count_parameters,
@@ -68,13 +68,17 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # -- Section 4: Configuration --------------------------------------------------
 
 # -- Data splits ---------------------------------------------------------------
-# All training and tuning scripts load data from data_splits.json, produced by
-# generate_data_splits.py. This ensures consistent train/val partitions across
-# the entire pipeline and inherits the mouse-level leakage check.
-# Previous (uniform downsampling): data_splits.json
+# All training and tuning scripts load data from data_splits.json (or a
+# downstream manifest derived from it), produced by generate_data_splits.py.
+# This ensures consistent train/val partitions across the entire pipeline and
+# inherits the mouse-level leakage check.
+# Switch by uncommenting the desired line; only one SPLITS_PATH should be active.
+# Option A (uniform downsampling, historical): data_splits.json
 # SPLITS_PATH = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits.json")
-# Current (proximity-aware downsampling): data_splits_nonictal_sampled.json
-SPLITS_PATH = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_nonictal_sampled.json")
+# Option B (peri-ictal, proximity-aware, seizure-detection; create_balanced_splits.py):
+# SPLITS_PATH = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_nonictal_sampled.json")
+# Option C (pre-ictal [T-120, T-60], seizure-prediction; create_T_120_splits.py):
+SPLITS_PATH = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_T_120_sampled.json")
 
 # -- Signal parameters ---------------------------------------------------------
 FS            = 500    # sampling rate in Hz
@@ -159,16 +163,18 @@ log.info("PyTorch: %s", torch.__version__)
 log.info("Optuna : %s", optuna.__version__)
 log.info("Output directory: %s", OUTPUT_DIR.resolve())
 # -- Section 5: Dataset and DataLoader -----------------------------------------
-# Load train/val file-label pairs from data_splits_nonictal_sampled.json (produced
-# by create_balanced_splits.py). All pipeline scripts load the same balanced
-# manifest to guarantee consistent partitions and inherit the mouse-level
-# leakage check from generate_data_splits.py (upstream).
+# Load train/val file-label pairs from the active manifest at SPLITS_PATH
+# (currently data_splits_T_120_sampled.json, produced by create_T_120_splits.py).
+# All pipeline scripts load the same manifest to guarantee consistent partitions
+# and inherit the mouse-level leakage check from generate_data_splits.py
+# (upstream).
 
 if not SPLITS_PATH.exists():
     raise FileNotFoundError(
-        f"data_splits_nonictal_sampled.json not found at {SPLITS_PATH}. "
-        f"Run create_balanced_splits.py first (which itself requires "
-        f"data_splits.json from generate_data_splits.py).")
+        f"Manifest not found at {SPLITS_PATH}. "
+        f"Run create_T_120_splits.py (for the pre-ictal manifest) or "
+        f"create_balanced_splits.py (for the peri-ictal manifest) first. "
+        f"Both require data_splits.json from generate_data_splits.py.")
 
 log.info(f"Loading splits from: {SPLITS_PATH}")
 
@@ -180,14 +186,16 @@ train_pairs = [(rec["filepath"], rec["label"]) for rec in _splits["train"]]
 val_pairs   = [(rec["filepath"], rec["label"]) for rec in _splits["val"]]
 
 if not train_pairs:
-    raise RuntimeError("Train partition is empty in data_splits_nonictal_sampled.json.")
+    raise RuntimeError(f"Train partition is empty in {SPLITS_PATH.name}.")
 if not val_pairs:
-    raise RuntimeError("Val partition is empty in data_splits_nonictal_sampled.json.")
+    raise RuntimeError(f"Val partition is empty in {SPLITS_PATH.name}.")
 
 # -- Corpus preparation --------------------------------------------------------
-# Subject exclusion (m254), 1:4 downsampling, and extreme-segment filtering
-# are ALL handled offline by create_balanced_splits.py. The manifest is
-# already clean and balanced -- no further corpus preparation is needed here.
+# Subject exclusion (m254), non-ictal selection, and extreme-segment filtering
+# are ALL handled offline by the manifest-generation script
+# (create_T_120_splits.py for pre-ictal; create_balanced_splits.py for
+# peri-ictal). The manifest is already clean -- no further corpus preparation
+# is needed here.
 # train_pairs = filter_unpaired_subjects(train_pairs, logger=log)
 log.info(f"Training corpus: {len(train_pairs)} segments (from balanced manifest)")
 
@@ -275,7 +283,9 @@ def optuna_objective(trial):
                  f"RF={rf} params={count_parameters(model)}")
 
         # -- Build data loaders ------------------------------------------------
-        # Class imbalance handled by offline downsampling in create_balanced_splits.py.
+        # Class imbalance handled by offline non-ictal selection in the
+        # manifest-generation script (create_T_120_splits.py for pre-ictal;
+        # create_balanced_splits.py for peri-ictal).
         # make_loader(train=True) shuffles the pre-balanced corpus.
         train_loader = make_loader(train_pairs, batch_size, train=True, device=DEVICE)
         val_loader = make_loader(val_pairs, batch_size, train=False, device=DEVICE)

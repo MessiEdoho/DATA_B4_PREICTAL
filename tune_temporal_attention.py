@@ -117,7 +117,7 @@ from optuna.pruners import MedianPruner
 from tcn_utils import (
     set_seed,
     make_loader,
-    # filter_unpaired_subjects,  # handled offline by create_balanced_splits.py
+    # filter_unpaired_subjects,  # handled offline by create_T_120_splits.py (or create_balanced_splits.py for peri-ictal)
     downsample_val_stratified,
     TCNWithAttention,
     count_parameters,
@@ -152,10 +152,13 @@ OUTPUT_DIR      = Path("/home/people/22206468/scratch/OUTPUT/MODEL2_OUTPUT")    
 LOG_DIR         = OUTPUT_DIR / "logs"                   # log file directory
 FIGURE_DIR      = OUTPUT_DIR / "figures"                # figure output directory
 BEST_TCN_PATH   = Path("/home/people/22206468/scratch/OUTPUT/MODEL1_OUTPUT/TCNtuning_outputs/best_params.json")  # fixed TCN backbone hyperparameters
-# Previous (uniform downsampling): data_splits.json
+# Manifest path -- switch by uncommenting the desired line.
+# Option A (uniform downsampling, historical): data_splits.json
 # SPLITS_PATH     = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits.json")
-# Current (proximity-aware downsampling): data_splits_nonictal_sampled.json
-SPLITS_PATH     = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_nonictal_sampled.json")
+# Option B (peri-ictal, proximity-aware, seizure-detection; create_balanced_splits.py):
+# SPLITS_PATH     = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_nonictal_sampled.json")
+# Option C (pre-ictal [T-120, T-60], seizure-prediction; create_T_120_splits.py):
+SPLITS_PATH     = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_T_120_sampled.json")
 BEST_ATTN_PATH  = OUTPUT_DIR / "best_attention_params.json"
 STUDY_CSV       = OUTPUT_DIR / "attention_study_results.csv"
 SUMMARY_PATH    = OUTPUT_DIR / "attention_tuning_summary.json"
@@ -276,7 +279,10 @@ def load_best_tcn_params(logger):
 # load_splits
 # ---------------------------------------------------------------------------
 def load_splits(logger):
-    """Load train and val file-label pairs from data_splits_nonictal_sampled.json.
+    """Load train and val file-label pairs from the active manifest at SPLITS_PATH.
+
+    The active manifest is chosen by the SPLITS_PATH constant above (peri-ictal
+    or pre-ictal). Both manifests share the same JSON schema.
 
     Parameters
     ----------
@@ -291,15 +297,16 @@ def load_splits(logger):
     Raises
     ------
     FileNotFoundError
-        If data_splits_nonictal_sampled.json is absent.
+        If the manifest is absent.
     RuntimeError
         If train or val lists are empty.
     """
     if not SPLITS_PATH.exists():
         logger.error(
-            "data_splits_nonictal_sampled.json not found at %s. "
-            "Run create_balanced_splits.py first (which itself requires "
-            "data_splits.json from generate_data_splits.py).", SPLITS_PATH)
+            "Manifest not found at %s. "
+            "Run create_T_120_splits.py (pre-ictal) or create_balanced_splits.py "
+            "(peri-ictal) first. Both require data_splits.json from "
+            "generate_data_splits.py.", SPLITS_PATH)
         raise FileNotFoundError(str(SPLITS_PATH))
 
     with open(SPLITS_PATH, "r", encoding="utf-8") as f:
@@ -883,11 +890,12 @@ def main():
     train_pairs, val_pairs = load_splits(logger)
 
     # -- Corpus preparation ----------------------------------------------------
-    # Downsampling and extreme-segment filtering are handled offline by
-    # create_balanced_splits.py. The manifest is already clean.
-    # Subject exclusion (m254), 1:4 downsampling, and extreme-segment filtering
-    # are ALL handled offline by create_balanced_splits.py. The manifest is
-    # already clean and balanced -- no further corpus preparation is needed here.
+    # Non-ictal selection and extreme-segment filtering are handled offline by
+    # the manifest-generation script (create_T_120_splits.py for pre-ictal;
+    # create_balanced_splits.py for peri-ictal). Subject exclusion (m254),
+    # non-ictal windowing, and extreme-segment filtering are ALL performed
+    # offline, so the loaded manifest is already clean -- no further corpus
+    # preparation is needed here.
     # train_pairs = filter_unpaired_subjects(train_pairs, logger=logger)
     logger.info("Training corpus: %d segments (from balanced manifest)", len(train_pairs))
 

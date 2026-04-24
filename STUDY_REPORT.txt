@@ -37,25 +37,76 @@ development:
     Partition       Subjects    Purpose
     --------------- ----------- -------------------------------------------
     Training        72          Model fitting and hyperparameter tuning
-    Validation      ~10         Early stopping, threshold optimisation
-    Test            ~10         Final held-out evaluation (reserved)
+    Validation      10          Early stopping, threshold optimisation
+    Test            20          Final held-out evaluation (reserved)
 
 Subject-level partitioning guarantees that no EEG data from the same
 animal appears in more than one partition. This design prevents inflated
 performance estimates that arise when temporally correlated segments from
 a single recording are distributed across training and evaluation sets
-(Gemein et al., 2020) [VERIFY EXACT QUOTE BEFORE SUBMISSION].
+(Gemein et al., 2020; Roy et al., 2019) [VERIFY EXACT QUOTE BEFORE
+SUBMISSION].
 
-An automated leakage check was executed at the time of partition
-generation to confirm that no subject identifier appeared in more than
-one split. This check is enforced programmatically each time the
-data manifest is regenerated.
+2.1 Justification of the 72/10/20 partition
 
-Reference:
+    The 102-mouse cohort was divided to balance three competing
+    requirements: (i) maximising the training signal available to the
+    deep temporal models under evaluation, (ii) reserving a validation
+    partition large enough for stable early-stopping and decision-
+    threshold selection but small enough not to erode the final
+    test-set allocation, and (iii) securing a held-out test partition
+    large enough that subject-level generalisation can be reported
+    with meaningful uncertainty bounds.
+
+    Allocating 72 subjects (approximately 71%) to training reflects
+    the known sensitivity of convolutional and recurrent temporal
+    models to the diversity and volume of available EEG, where
+    representational coverage of both seizure morphologies and
+    background activity improves appreciably with additional
+    recordings (Roy et al., 2019) [VERIFY EXACT QUOTE BEFORE
+    SUBMISSION]. Under the present segmentation scheme, 72 training
+    subjects contribute 65,510 ictal segments (Section 8.1), an order
+    of magnitude large enough to support supervised learning of the
+    minority class without relying on loss-level reweighting
+    (Sections 9.2-9.3).
+
+    The 10-subject validation partition (approximately 10%) is sized
+    to yield a sufficient count of ictal segments (11,603 under the
+    present segmentation) for stable macro-F1 estimation during
+    per-epoch model selection, while keeping its footprint small
+    enough for a single tuning study to evaluate dozens of
+    hyperparameter configurations within the cluster's walltime
+    budget (Section 7.1.1). A smaller validation partition would
+    inflate trial-to-trial selection variance during Optuna search;
+    a larger one would displace data from the held-out test
+    partition without meaningfully stabilising the tuning signal.
+
+    The 20-subject test partition (approximately 20%) is deliberately
+    set larger than validation. Because the test partition is queried
+    only once per final model and is reported alongside per-subject
+    metric variability (Section 7.6), its size directly governs the
+    width of the confidence intervals associated with the reported
+    generalisation estimate. Twenty held-out subjects provide a
+    reasonable cross-section of the UNIQURE cohort's biological
+    heterogeneity (strain background, age, seizure burden, artefact
+    profile) and permit both cohort-level summary statistics and
+    per-subject breakdowns without any single animal dominating the
+    aggregate estimate.
+
+    An automated leakage check is executed at the time of partition
+    generation to confirm that no subject identifier appears in more
+    than one split. This check is enforced programmatically each time
+    the data manifest is regenerated.
+
+References:
     Gemein, L. A. W., Schirrmeister, R. T., Chrabąszcz, P., Wilson, D.,
         Boedecker, J., Schulze-Bonhage, A., Hutter, F., & Ball, T. (2020).
         Machine-Learning-Based Diagnostics of EEG Pathology. NeuroImage,
         220, 117021. https://doi.org/10.1016/j.neuroimage.2020.117021
+    Roy, Y., Banville, H., Albuquerque, I., Gramfort, A., Falk, T. H.,
+        & Faubert, J. (2019). Deep learning-based electroencephalography
+        analysis: a systematic review. Journal of Neural Engineering,
+        16(5), 051001.
 
 --------------------------------------------------------------------------------
 3. PREPROCESSING
@@ -776,10 +827,10 @@ ablation comparisons share identical backbone configurations.
 
 7.1.1 Validation subset during tuning -- size selection and timing
 
-    The validation partition contains 4,298,154 segments (73 held-out
+    The validation partition contains 4,298,154 segments (10 held-out
     mice), of which 11,603 are ictal (0.27%). Because this partition
-    was not subjected to the proximity-aware downsampling applied to
-    the training partition (Section 5), its raw size dominates
+    was not subjected to the offline non-ictal selection applied to
+    the training partition (Section 9), its raw size dominates
     per-epoch tuning cost unless a stratified subset is drawn.
 
     Three candidate subset fractions were compared against the
@@ -1203,10 +1254,14 @@ ablation comparisons share identical backbone configurations.
                + (1 - y) * log(1 - sigma(z)) ]
 
     with pos_weight = 1.0. Class imbalance is addressed exclusively
-    through offline proximity-aware downsampling of the training
-    partition (see Section 5 and create_balanced_splits.py) rather
-    than through loss reweighting. The resulting manifest has a
-    1:2.37 ictal-to-non-ictal ratio, which is balanced enough for
+    through offline non-ictal selection of the training partition
+    (Section 9) rather than through loss reweighting. Two manifests
+    are supported: (i) the peri-ictal manifest
+    (data_splits_nonictal_sampled.json, produced by
+    create_balanced_splits.py) with a 1:2.37 ictal-to-non-ictal ratio,
+    and (ii) the pre-ictal manifest (data_splits_T_120_sampled.json,
+    produced by create_T_120_splits.py) with an approximately 1:1
+    ratio (see Sections 9.2 and 9.3). Both are balanced enough for
     standard BCE optimisation without further correction.
 
     Offline downsampling is preferred over online pos_weight
@@ -1479,7 +1534,8 @@ ablation comparisons share identical backbone configurations.
     Weight decay             Decoupled (Optuna-selected per model)
     LR schedule              CosineAnnealingLR (eta_min = lr * 0.01)
     Loss                     BCEWithLogitsLoss (pos_weight = 1.0)
-    Class balance mechanism  Offline proximity-aware downsampling
+    Class balance mechanism  Offline non-ictal selection (peri-ictal
+                             or pre-ictal manifest; see Section 9)
     Gradient clipping        max_norm = 1.0 (L2)
     Mixed precision          AMP FP16 (CUDA) / FP32 (CPU)
     Training mode (M2, M4)   Joint (backbone + attention unfrozen)
@@ -1615,12 +1671,80 @@ References:
     remained at 1.0, with the offline sampling serving as the sole
     imbalance correction mechanism.
 
-    9.3 Final balanced training corpus
+9.3 Pre-ictal window sampling (alternative approach for comparison)
 
-    Application of the proximity-aware strategy to the 72 training
-    subjects produced the following corpus:
+    To enable a head-to-head comparison between the seizure-detection
+    formulation above (peri-ictal manifest) and a seizure-prediction
+    formulation of the same binary task, a second training manifest
+    was constructed using a fixed pre-ictal window strategy. For each
+    annotated seizure with onset T (seconds from recording start),
+    only non-ictal segments whose boundaries satisfied
+    [T - 120 s, T - 60 s] under full containment
+    (seg_start >= T - 120 AND seg_end <= T - 60) were retained:
 
-    Table 5. Final balanced training corpus composition.
+    (a) A 60-second pre-ictal window of interest (the "seizure
+        occurrence period", SOP) was placed 60 seconds before seizure
+        onset, the latter 60-second interval acting as a "seizure
+        prediction horizon" (SPH). The SPH was reserved specifically
+        to exclude the immediately preceding peri-ictal transients
+        and pre-ictal spikes that blur the classifier's decision
+        boundary with ictal activity (Maiwald et al., 2004; Litt
+        et al., 2001) [VERIFY EXACT QUOTE BEFORE SUBMISSION].
+
+    (b) All other non-ictal segments (post-ictal, inter-ictal >120 s
+        from any seizure, and the 60 s immediately preceding seizure
+        onset) were DROPPED. No random subsample of distant background
+        was drawn, in contrast to the peri-ictal manifest above.
+
+    (c) Seizures whose onset fell less than 120 seconds into a
+        recording have no usable pre-ictal window and are skipped for
+        non-ictal selection; their ictal segments remain in the
+        manifest.
+
+    This design follows the "SPH + SOP" framework of Maiwald et al.
+    (2004) [VERIFY EXACT QUOTE BEFORE SUBMISSION], in which SPH denotes
+    the gap separating predicted-state evidence from ictal onset and
+    SOP denotes the interval within which the predicted event must
+    occur. The present configuration (SPH = SOP = 60 s) lies within
+    the range of pre-ictal intervals where distinctive EEG dynamics
+    have been reported in intracranial and scalp recordings
+    (Mormann et al., 2007; Kuhlmann et al., 2018) [VERIFY EXACT QUOTE
+    BEFORE SUBMISSION].
+
+    Justification of the class imbalance treatment. Under full
+    containment with 5-second windows and 2.5-second steps, the
+    per-seizure ceiling on retained non-ictal segments is
+    approximately (PREICTAL_WIDTH_SEC - 5) / 2.5 + 1 = 23. Across the
+    2,881 annotated seizures of the training cohort the non-ictal
+    count is bounded above by ~23 x 2,881 ~= 66,000 segments, a count
+    of the same order as the 65,510 retained ictal segments. The
+    resulting ictal-to-non-ictal ratio is therefore approximately 1:1
+    (or ictal-majority), so NO additional class-reweighting is
+    required: pos_weight = 1.0 is retained in BCEWithLogitsLoss,
+    identical to the peri-ictal configuration. This selection-rule-
+    driven balancing is consistent with the binary pre-ictal vs ictal
+    (or pre-ictal vs inter-ictal) classification pipelines surveyed
+    in Kuhlmann et al. (2018) and Rasheed et al. (2020) [VERIFY EXACT
+    QUOTE BEFORE SUBMISSION], which rely on fixed-window selection
+    rules rather than loss reweighting to achieve class balance.
+
+    The two manifests (peri-ictal and pre-ictal) share the SAME
+    data_splits.json input, the SAME exclusion criteria (m254
+    removal, amplitude filter, NaN/Inf filter), the SAME validation
+    pass-through, the SAME random seed (42), and the SAME .npy file
+    universe on disk. Only the non-ictal selection rule differs, so
+    any downstream differences in model performance between the two
+    configurations are attributable to the selection rule alone. The
+    pre-ictal manifest is generated by create_T_120_splits.py and
+    written to data_splits_T_120_sampled.json.
+
+9.4 Final training corpora
+
+    Application of the peri-ictal strategy (Section 9.2) to the 72
+    training subjects produced the corpus in Table 5.
+
+    Table 5. Peri-ictal training corpus composition
+    (data_splits_nonictal_sampled.json).
 
     Component                           Count       Proportion
     ---------------------------------   ---------   -----------
@@ -1631,25 +1755,58 @@ References:
     ---------------------------------   ---------   -----------
     Total training segments             220,653     100.0%
 
-    The final ictal-to-non-ictal ratio is 1:2.37 (compared to the
+    The peri-ictal ictal-to-non-ictal ratio is 1:2.37 (compared to the
     original 1:438 raw ratio and the 1:4 uniform-downsampling ratio).
     The corpus is 33% smaller than the uniform-downsampling approach
     (220,653 vs 327,550 segments), reducing training time while
     increasing the concentration of informative hard negatives:
-    near-seizure segments now constitute 95.3% of the non-ictal class,
+    near-seizure segments constitute 95.3% of the non-ictal class,
     compared to an estimated 5-10% under uniform downsampling.
+
+    Application of the pre-ictal strategy (Section 9.3) to the same
+    cohort produces the corpus in Table 5a. Exact counts are reported
+    once the manifest is regenerated on the cluster; the projected
+    values below are derived from the per-seizure ceiling of
+    approximately 23 non-ictal segments combined with the 2,881
+    annotated seizures.
+
+    Table 5a. Pre-ictal training corpus composition (projected;
+    data_splits_T_120_sampled.json). [UPDATE AFTER MANIFEST
+    REGENERATION]
+
+    Component                                Count (proj.)    Proportion
+    --------------------------------------   -------------    -----------
+    Ictal segments (all retained)            65,510           ~50%
+    Non-ictal in [T-120, T-60] window        <= ~66,000       ~50%
+    Extreme segments removed                 (matches 9.2)    --
+    --------------------------------------   -------------    -----------
+    Total training segments                  ~130,000         100.0%
+
+    The projected pre-ictal ratio is approximately 1:1 (or ictal-
+    majority), achieved entirely by the selection rule with no
+    loss-level reweighting. Seizures whose onset falls within the
+    first 120 seconds of a recording are skipped for non-ictal
+    selection; their ictal segments are retained. The exact count of
+    such skipped seizures is logged by create_T_120_splits.py and
+    recorded in the manifest metadata
+    (n_seizures_skipped_early_onset).
 
     Across the 72 training subjects, 2,881 seizure events were
     annotated (mean 40.0 seizures per subject, range 1-178). This
-    biological heterogeneity is preserved in the balanced manifest:
+    biological heterogeneity is preserved in both manifests:
     per-subject segment counts scale with seizure burden, ensuring
     that high-seizure subjects contribute proportionally more
-    near-seizure hard negatives.
+    hard negatives (peri-ictal manifest) or pre-ictal exemplars
+    (pre-ictal manifest).
 
-    The manifest (data_splits_nonictal_sampled.json) is generated
-    once by create_balanced_splits.py and loaded by all tuning and
-    training scripts. The validation partition (4,298,154 segments)
-    is passed through unchanged; tuning scripts apply a separate
+    The peri-ictal manifest (data_splits_nonictal_sampled.json) is
+    generated once by create_balanced_splits.py (historical). The
+    pre-ictal manifest (data_splits_T_120_sampled.json) is generated
+    once by create_T_120_splits.py. Both are loaded by the same
+    tuning and training scripts via a manifest-path argument; no
+    training-code changes are required to switch between them. The
+    validation partition (4,298,154 segments) is passed through
+    unchanged in both manifests; tuning scripts apply a separate
     stratified 1% subset during per-epoch evaluation (see
     Section 7.1.1 for the timing and sample-size justification).
 
@@ -1659,6 +1816,11 @@ References:
         International Conference on Machine Learning (ICML).
     Litt, B. & Echauz, J. (2002). Prediction of epileptic seizures.
         The Lancet Neurology, 1(1), 22-30.
+    Litt, B., Esteller, R., Echauz, J., D'Alessandro, M., Shor, R.,
+        Henry, T., Pennell, P., Epstein, C., Bakay, R., Dichter, M., &
+        Vachtsevanos, G. (2001). Epileptic seizures may begin hours
+        in advance of clinical onset: a report of five patients.
+        Neuron, 30(1), 51-64.
     Shrivastava, A., Gupta, A., & Girshick, R. (2016). Training
         Region-Based Object Detectors with Online Hard Example Mining.
         Proceedings of the IEEE Conference on Computer Vision and
@@ -1666,6 +1828,24 @@ References:
     Bengio, Y., Louradour, J., Collobert, R., & Weston, J. (2009).
         Curriculum Learning. Proceedings of the 26th International
         Conference on Machine Learning (ICML), 41-48.
+    Maiwald, T., Winterhalder, M., Aschenbrenner-Scheibe, R.,
+        Voss, H. U., Schulze-Bonhage, A., & Timmer, J. (2004).
+        Comparison of three nonlinear seizure prediction methods by
+        means of the seizure prediction characteristic. Physica D,
+        194(3-4), 357-368.
+    Mormann, F., Andrzejak, R. G., Elger, C. E., & Lehnertz, K. (2007).
+        Seizure prediction: the long and winding road. Brain, 130(2),
+        314-333.
+    Freestone, D. R., Karoly, P. J., & Cook, M. J. (2017). A forward-
+        looking review of seizure prediction. Current Opinion in
+        Neurology, 30(2), 167-173.
+    Kuhlmann, L., Lehnertz, K., Richardson, M. P., Schelter, B., &
+        Zaveri, H. P. (2018). Seizure prediction -- ready for a new
+        era. Nature Reviews Neurology, 14(10), 618-630.
+    Rasheed, K., Qayyum, A., Qadir, J., Sivathamboo, S., Kwan, P.,
+        Kuhlmann, L., O'Brien, T., & Razi, A. (2020). Machine learning
+        for predicting epileptic seizures using EEG signals: A review.
+        IEEE Reviews in Biomedical Engineering, 14, 139-155.
     Luttjohann, A., Fabene, P. F., & van Luijtelaar, G. (2009). A
         revised Racine's scale for PTZ-induced seizures in rats.
         Physiology & Behavior, 98(5), 579-586.
@@ -1690,21 +1870,35 @@ Stage 2: Partition manifest generation
     labels for all 33 million segments. A subject-level leakage check
     is executed to verify partition integrity.
 
-Stage 3: Balanced corpus construction
-    The training partition of data_splits.json is processed by an
-    offline script (create_balanced_splits.py) that: (i) excludes
-    subject m254, (ii) removes six amplitude-anomalous segments,
-    (iii) classifies non-ictal segments as near-seizure or
-    far-from-seizure, and (iv) applies proximity-aware downsampling.
-    The output (data_splits_nonictal_sampled.json) serves as the
-    training manifest for all subsequent experiments. The validation
-    partition is passed through unmodified.
+Stage 3: Training manifest construction
+    The training partition of data_splits.json is processed by one of
+    two offline scripts, each producing a manifest with the same JSON
+    schema:
+
+    (a) create_balanced_splits.py -> data_splits_nonictal_sampled.json
+        (peri-ictal manifest; seizure-detection formulation). Excludes
+        subject m254, removes amplitude-anomalous segments, classifies
+        non-ictal segments as near-seizure (+/-60 s) or far, and
+        applies proximity-aware downsampling with a 5% far-sample
+        subsample of the near-seizure count (Section 9.2).
+
+    (b) create_T_120_splits.py -> data_splits_T_120_sampled.json
+        (pre-ictal manifest; seizure-prediction formulation). Applies
+        the same exclusions, then retains only non-ictal segments
+        fully contained in [T-120 s, T-60 s] for each annotated
+        seizure onset T. Drops post-ictal, inter-ictal, and immediate
+        pre-ictal (<60 s) segments (Section 9.3).
+
+    Either manifest serves as the training source for subsequent
+    experiments; both are supported by downstream scripts via a
+    manifest-path argument. The validation partition is passed through
+    unmodified in both cases.
 
 Stage 4: Model development
     Hyperparameter tuning (4 scripts) and final model training
-    (4 scripts) load the balanced manifest directly. No further
-    downsampling, filtering, or data manipulation is performed at
-    training time.
+    (4 scripts) load whichever manifest (peri-ictal or pre-ictal) is
+    under evaluation. No further downsampling, filtering, or data
+    manipulation is performed at training time.
 
 --------------------------------------------------------------------------------
 11. STORAGE INFRASTRUCTURE

@@ -1377,9 +1377,11 @@ def run_training(model, train_loader, val_loader, lr, weight_decay,
     """Full training loop with early stopping, cosine annealing, and optional Optuna pruning.
 
     pos_weight is fixed at 1.0 because class imbalance is handled by
-    offline proximity-aware downsampling in create_balanced_splits.py,
-    which produces a pre-balanced manifest (data_splits_nonictal_sampled.json)
-    loaded before DataLoader construction.
+    offline non-ictal selection in the manifest-generation script
+    (create_T_120_splits.py -> data_splits_T_120_sampled.json for the
+    pre-ictal manifest; create_balanced_splits.py ->
+    data_splits_nonictal_sampled.json for the peri-ictal manifest). The
+    selected manifest is loaded before DataLoader construction.
 
     Parameters
     ----------
@@ -1417,8 +1419,10 @@ def run_training(model, train_loader, val_loader, lr, weight_decay,
     >>> f1 = run_training(model, train_ld, val_ld, 1e-3, 1e-4, 100, 10, device,
     ...                   trial=trial, logger=logger)
     """
-    # pos_weight = 1.0: class imbalance is handled by create_balanced_splits.py
-    # (proximity-aware downsampling to 1:2.37 ratio). No loss reweighting.
+    # pos_weight = 1.0: class imbalance is handled offline by the
+    # manifest-generation script (create_T_120_splits.py for pre-ictal,
+    # ~1:1 ratio; create_balanced_splits.py for peri-ictal, ~1:2.37 ratio).
+    # No loss reweighting is applied here.
     pw = torch.tensor([1.0], dtype=torch.float32).to(device)
 
     criterion = nn.BCEWithLogitsLoss(pos_weight=pw)

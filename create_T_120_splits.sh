@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=create_balanced_splits
+#SBATCH --job-name=create_T_120_splits
 # Single node, no GPU needed -- reads EDF headers + .npy files, writes JSON
 #SBATCH -N 1
 
@@ -23,8 +23,8 @@ echo "===== JOB START ====="
 date
 echo "Running on node: $(hostname)"
 echo "Job ID: $SLURM_JOB_ID"
-echo "Purpose: Proximity-aware downsampling of non-ictal segments"
-echo "Output: data_splits_nonictal_sampled.json"
+echo "Purpose: Pre-ictal window [T-120, T-60] non-ictal selection"
+echo "Output: data_splits_T_120_sampled.json"
 echo "Mode: READ-ONLY on .npy files (no data files modified or deleted)"
 
 # Activate environment (requires numpy, mne, pandas, matplotlib)
@@ -34,8 +34,8 @@ conda activate torch_v100_py310
 
 cd ~/TCN_SSL_GA
 
-# Run the balanced splits generation
-python create_balanced_splits.py
+# Run the pre-ictal splits generation
+python create_T_120_splits.py
 
 echo "===== JOB END ====="
 date

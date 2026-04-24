@@ -83,7 +83,7 @@ from tcn_utils import (
     set_seed,
     MultiScaleTCN,
     make_loader,
-    # filter_unpaired_subjects,  # handled offline by create_balanced_splits.py
+    # filter_unpaired_subjects,  # handled offline by create_T_120_splits.py (or create_balanced_splits.py for peri-ictal)
     train_one_epoch,
     count_parameters,
     segment_predictions_to_events,
@@ -138,11 +138,14 @@ EVAL_REPORT_PATH  = OUTPUT_ROOT / "multiscale_tcn_evaluation_report.json"  # thr
 THRESH_PATH       = OUTPUT_ROOT / "multiscale_tcn_optimal_threshold.json"  # Youden-optimal threshold
 EPOCH_CSV         = OUTPUT_ROOT / "multiscale_tcn_epoch_metrics.csv"     # per-epoch loss, F1, LR
 THREE_ROW_CSV     = OUTPUT_ROOT / "multiscale_tcn_three_row_summary.csv" # paper Table (M3 block)
-# data_splits.json -- single source of truth (matches all other pipeline scripts)
-# Previous (uniform downsampling): data_splits.json
+# Manifest path -- single source of truth (matches all other pipeline scripts).
+# Switch by uncommenting the desired line; only one SPLITS_PATH should be active.
+# Option A (uniform downsampling, historical): data_splits.json
 # SPLITS_PATH         = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits.json")
-# Current (proximity-aware downsampling): data_splits_nonictal_sampled.json
-SPLITS_PATH         = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_nonictal_sampled.json")
+# Option B (peri-ictal, proximity-aware, seizure-detection; create_balanced_splits.py):
+# SPLITS_PATH         = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_nonictal_sampled.json")
+# Option C (pre-ictal [T-120, T-60], seizure-prediction; create_T_120_splits.py):
+SPLITS_PATH         = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_T_120_sampled.json")
 BEST_PARAMS_PATH    = Path("/home/people/22206468/scratch/OUTPUT/MODEL3_OUTPUT/MultiScaleTCNtuning_outputs") / "best_multiscale_params.json"
 
 # Fallback dilation schedules if branch_dilations not in JSON
@@ -1202,11 +1205,12 @@ def main():
     train_pairs, val_pairs = load_splits(logger)
 
     # -- Corpus preparation ----------------------------------------------------
-    # Downsampling and extreme-segment filtering are handled offline by
-    # create_balanced_splits.py. The manifest is already clean.
-    # Subject exclusion (m254), 1:4 downsampling, and extreme-segment filtering
-    # are ALL handled offline by create_balanced_splits.py. The manifest is
-    # already clean and balanced -- no further corpus preparation is needed here.
+    # Non-ictal selection and extreme-segment filtering are handled offline by
+    # the manifest-generation script (create_T_120_splits.py for the current
+    # pre-ictal manifest, create_balanced_splits.py for the historical
+    # peri-ictal manifest). Subject exclusion (m254), non-ictal windowing,
+    # and extreme-segment filtering are ALL performed offline, so the loaded
+    # manifest is already clean -- no further corpus preparation is needed here.
     # train_pairs = filter_unpaired_subjects(train_pairs, logger=logger)
     logger.info("Training corpus: %d segments (from balanced manifest)", len(train_pairs))
     pos_weight = torch.tensor([1.0], dtype=torch.float32)

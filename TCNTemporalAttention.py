@@ -98,7 +98,7 @@ from tcn_utils import (
     set_seed,                        # fix Python/NumPy/PyTorch seeds for reproducibility
     TCNWithAttention,                # M2 architecture: TCN backbone + two-layer additive attention
     make_loader,                     # build DataLoader (sequential for val, shuffled for train)
-    # filter_unpaired_subjects,      # handled offline by create_balanced_splits.py
+    # filter_unpaired_subjects,      # handled offline by create_T_120_splits.py (or create_balanced_splits.py for peri-ictal)
     train_one_epoch,                 # one epoch: forward + loss + backward + gradient clip + step
     count_parameters,                # sum of requires_grad=True parameter elements
     segment_predictions_to_events,   # post-processing: smooth -> merge -> min-duration filter
@@ -141,11 +141,14 @@ THREE_ROW_CSV     = OUTPUT_ROOT / "tcn_attention_three_row_summary.csv"
 BACKBONE_PARAMS_PATH = Path("/home/people/22206468/scratch/OUTPUT/MODEL1_OUTPUT/TCNtuning_outputs") / "best_params.json"            # from tcn_HPT_binary.ipynb
 ATTN_PARAMS_PATH     = Path("/home/people/22206468/scratch/OUTPUT/MODEL2_OUTPUT") / "best_attention_params.json"  # from tune_temporal_attention.py
 
-# data_splits.json -- single source of truth (matches all other pipeline scripts)
-# Previous (uniform downsampling): data_splits.json
+# Manifest path -- single source of truth (matches all other pipeline scripts).
+# Switch by uncommenting the desired line; only one SPLITS_PATH should be active.
+# Option A (uniform downsampling, historical): data_splits.json
 # SPLITS_PATH = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits.json")
-# Current (proximity-aware downsampling): data_splits_nonictal_sampled.json
-SPLITS_PATH = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_nonictal_sampled.json")
+# Option B (peri-ictal, proximity-aware, seizure-detection; create_balanced_splits.py):
+# SPLITS_PATH = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_nonictal_sampled.json")
+# Option C (pre-ictal [T-120, T-60], seizure-prediction; create_T_120_splits.py):
+SPLITS_PATH = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_T_120_sampled.json")
 
 # Backbone attribute prefix in TCNWithAttention (confirmed: self.tcn)
 BACKBONE_ATTR = "tcn"                                  # for parameter counting
@@ -1183,11 +1186,12 @@ def main():
     train_pairs, val_pairs = load_splits(logger)
 
     # -- Corpus preparation ----------------------------------------------------
-    # Downsampling and extreme-segment filtering are handled offline by
-    # create_balanced_splits.py. The manifest is already clean.
-    # Subject exclusion (m254), 1:4 downsampling, and extreme-segment filtering
-    # are ALL handled offline by create_balanced_splits.py. The manifest is
-    # already clean and balanced -- no further corpus preparation is needed here.
+    # Non-ictal selection and extreme-segment filtering are handled offline by
+    # the manifest-generation script (create_T_120_splits.py for the current
+    # pre-ictal manifest, create_balanced_splits.py for the historical
+    # peri-ictal manifest). Subject exclusion (m254), non-ictal windowing,
+    # and extreme-segment filtering are ALL performed offline, so the loaded
+    # manifest is already clean -- no further corpus preparation is needed here.
     # train_pairs = filter_unpaired_subjects(train_pairs, logger=logger)
     logger.info("Training corpus: %d segments (from balanced manifest)", len(train_pairs))
     pos_weight = torch.tensor([1.0], dtype=torch.float32)
