@@ -78,7 +78,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Option B (peri-ictal, proximity-aware, seizure-detection; create_balanced_splits.py):
 # SPLITS_PATH = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_nonictal_sampled.json")
 # Option C (pre-ictal [T-120, T-60], seizure-prediction; create_T_120_splits.py):
-SPLITS_PATH = Path("/scratch/22206468/INPUT_DATA/data_splits_outputs/data_splits_T_120_sampled.json")
+SPLITS_PATH = Path("/home/people/22206468/scratch/INPUT_T_120/data_splits_outputs/data_splits_T_120_sampled.json")
 
 # -- Signal parameters ---------------------------------------------------------
 FS            = 500    # sampling rate in Hz
