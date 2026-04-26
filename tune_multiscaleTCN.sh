@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=tune_multiscaleTCN
+#SBATCH --job-name=tune_multiscaleTCN_B4_PREICTAL
 # One node with one GPU for PyTorch training + CPU cores for Optuna TPE
 #SBATCH -N 1
 # specify number of tasks/cores per node required
@@ -7,7 +7,7 @@
 
 #SBATCH --partition=csgpu
 
-##SBATCH --exclude=sonicgpu20
+#SBATCH --exclude=sonicgpu20
 # Request 1 gpus
 #SBATCH --gres=gpu:1
 

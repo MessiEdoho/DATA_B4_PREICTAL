@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=tcn_HPT_binary
+#SBATCH --job-name=tcn_HPT_binary_B4_PREICTAL
 # One node with one GPU for PyTorch training + CPU cores for Optuna TPE
 #SBATCH -N 1
 # specify number of tasks/cores per node required
